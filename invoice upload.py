@@ -21,9 +21,10 @@ uploaded_files = st.file_uploader(
     accept_multiple_files=True
 )
 
-# 🛠️ 核心后端请求函数：让服务器在后台发请求，彻底解决浏览器的 Axios 跨域网络错误
+# 🛠️ 核心后端请求函数
 def request_gemini_backend(api_key, mime_type, base64_data):
-    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    # 💡 关键修正点：更换为 2026 最新、最标准的 Google 官方绝对请求路径
+    api_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
     
     prompt_text = """
     你是一个专业的餐厅财务会计。请仔细阅读分析这张发票/收据，精准提取以下结构化数据：
@@ -60,7 +61,7 @@ def request_gemini_backend(api_key, mime_type, base64_data):
         method="POST"
     )
     
-    with urllib.request.urlopen(req, timeout=30) as response:
+    with urllib.request.urlopen(req, timeout=60) as response:
         result = json.loads(response.read().decode("utf-8"))
         return result["candidates"][0]["content"]["parts"][0]["text"]
 
@@ -85,7 +86,7 @@ if uploaded_files:
                     if not mime_type or "heic" in uploaded_file.name.lower() or "heif" in uploaded_file.name.lower():
                         mime_type = "image/jpeg"
                     
-                    # 🚀 调用后端请求，绕过任何前端浏览器网络拦截
+                    # 调用后端请求
                     ai_response_text = request_gemini_backend(GEMINI_API_KEY, mime_type, base64_data)
                     
                     st.success("✅ 该单据核销解析成功！")
@@ -94,7 +95,7 @@ if uploaded_files:
                                 
                 except Exception as e:
                     st.error(f"❌ 该单据解析发生错误: {str(e)}")
-                    st.info("💡 提示：这通常是由于网络超时或 API Key 额度超限。请稍后再试或检查 Secrets 配置。")
+                    st.info("💡 提示：请确保单据字迹清晰，或检查网络状况与 Secrets 配置。")
                     
         # 底部操作区
         st.write("---")
