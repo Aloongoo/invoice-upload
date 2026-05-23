@@ -14,7 +14,8 @@ st.title("🧾 智账宝")
 st.subheader("Papa Sushi 发票全自动核销与 A4 排版系统")
 st.write("---")
 
-uploaded_file = st.file_uploader("📥 请上传供应商发票或收据 (支持 PDF、PNG、JPG、JPEG)", type=["pdf", "png", "jpg", "jpeg"])
+# 💡 升级点 1：允许上传 iPhone 的 heif 和 heic 格式
+uploaded_file = st.file_uploader("📥 请上传供应商发票或收据 (支持 PDF、PNG、JPG、JPEG、HEIC、HEIF)", type=["pdf", "png", "jpg", "jpeg", "heic", "heif"])
 
 if uploaded_file is not None:
     if not GEMINI_API_KEY:
@@ -26,7 +27,11 @@ if uploaded_file is not None:
             # 读取文件并转为 Base64 编码
             file_bytes = uploaded_file.read()
             base64_data = base64.b64encode(file_bytes).decode("utf-8")
+            
+            # 💡 升级点 2：自动对齐输入格式，告诉 Gemini 怎么处理 iPhone 照片
             mime_type = uploaded_file.type
+            if not mime_type or "heic" in uploaded_file.name.lower() or "heif" in uploaded_file.name.lower():
+                mime_type = "image/jpeg"  # 强制转为通用图片流送给 AI 神经元
             
             # 准备原生的 API 请求负载 (针对 Gemini 1.5 Flash)
             api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
