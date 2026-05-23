@@ -1,6 +1,15 @@
+import os
+import sys
+
+# 🛠️ 终极破冰针：强迫服务器在开机第一秒自己下载工具箱
+try:
+    import google.generativeai as genai
+except ModuleNotFoundError:
+    st_status = os.system(f"{sys.executable} -m pip install google-generativeai openpyxl pillow pandas")
+    import google.generativeai as genai
+
 import streamlit as st
 import pandas as pd
-import google.generativeai as genai
 from PIL import Image
 import io
 import openpyxl
@@ -8,7 +17,7 @@ import openpyxl
 # 🎨 网页基础配置
 st.set_page_config(page_title="智账宝 · 发票核销系统", page_icon="🧾", layout="centered")
 
-# 🔒 隐形保险箱：直接从 Streamlit 系统的最底层安全后台读取钥匙，代码里不留一个字！
+# 🔒 隐形保险箱
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
 
 def init_client():
