@@ -23,7 +23,7 @@ uploaded_files = st.file_uploader(
 
 # 🛠️ 核心后端请求函数
 def request_gemini_backend(api_key, mime_type, base64_data):
-    # 💡 关键修正点：更换为 2026 最新、最标准的 Google 官方绝对请求路径
+    # 💡 终极修正点：使用官方最标准、对多模态图片/PDF 支持最完美的正式版 v1 接口路径
     api_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
     
     prompt_text = """
@@ -37,16 +37,17 @@ def request_gemini_backend(api_key, mime_type, base64_data):
     请用极其简明的 JSON 格式返回数据，不要包含任何 markdown 标记或额外解释。
     """
     
+    # 💡 标准多模态 JSON 载荷结构，严格对齐 Google 官方标准
     payload = {
         "contents": [{
             "parts": [
-                {"text": prompt_text},
                 {
                     "inlineData": {
                         "mimeType": mime_type,
                         "data": base64_data
                     }
-                }
+                },
+                {"text": prompt_text}
             ]
         }]
     }
@@ -63,7 +64,12 @@ def request_gemini_backend(api_key, mime_type, base64_data):
     
     with urllib.request.urlopen(req, timeout=60) as response:
         result = json.loads(response.read().decode("utf-8"))
-        return result["candidates"][0]["content"]["parts"][0]["text"]
+        # 稳妥提取返回文本
+        try:
+            return result["candidates"][0]["content"]["parts"][0]["text"]
+        except KeyError:
+            # 如果返回结构有变，尝试兜底解析
+            return json.dumps(result, ensure_ascii=False, indent=2)
 
 # 🔄 流水线处理
 if uploaded_files:
@@ -83,6 +89,7 @@ if uploaded_files:
                     base64_data = base64.b64encode(file_bytes).decode("utf-8")
                     
                     mime_type = uploaded_file.type
+                    # 如果是 iPhone 的 HEIC/HEIF，统一伪装成 jpeg 让底层顺利读取
                     if not mime_type or "heic" in uploaded_file.name.lower() or "heif" in uploaded_file.name.lower():
                         mime_type = "image/jpeg"
                     
