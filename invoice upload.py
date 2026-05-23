@@ -8,12 +8,12 @@ import openpyxl
 # 🎨 网页基础配置
 st.set_page_config(page_title="智账宝 · 发票核销系统", page_icon="🧾", layout="centered")
 
-# 🔒 核心安全防线：请确保下方的 API Key 准确无误
-GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY_HERE")
+# 🔒 隐形保险箱：直接从 Streamlit 系统的最底层安全后台读取钥匙，代码里不留一个字！
+GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
 
 def init_client():
-    if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
-        st.error("🔑 未检测到有效的 Gemini API Key，请在 Streamlit 后台或代码中配置。")
+    if not GEMINI_API_KEY:
+        st.error("🔑 未检测到有效的 Gemini API Key！请点击右下角 'Manage app' -> 'Settings' -> 'Secrets' 配置您的钥匙。")
         return False
     genai.configure(api_key=GEMINI_API_KEY)
     return True
@@ -28,10 +28,8 @@ uploaded_file = st.file_uploader("📥 请上传供应商发票或收据 (支持
 if uploaded_file is not None:
     st.info("⚡ 正在读取文件并唤醒 Gemini AI 神经元，请稍候...")
     
-    # 读取文件
     file_bytes = uploaded_file.read()
     
-    # 准备给 AI 的指令
     prompt = """
     你是一个专业的餐厅财务会计。请仔细阅读分析这张发票/收据，精准提取以下结构化数据：
     1. 供应商名称 (Supplier Name)
@@ -45,12 +43,9 @@ if uploaded_file is not None:
     
     if init_client():
         try:
-            # 使用经典且极其稳定的 gemini-1.5-flash 模型进行多模态解析
             if uploaded_file.type == "application/pdf":
-                # PDF 传入格式
                 contents = [{"mime_type": "application/pdf", "data": file_bytes}, prompt]
             else:
-                # 图片传入格式
                 image = Image.open(io.BytesIO(file_bytes))
                 contents = [image, prompt]
                 
@@ -61,7 +56,6 @@ if uploaded_file is not None:
             st.write("### 🤖 AI 提取出的财务原始快照：")
             st.write(response.text)
             
-            # 预留 A4 排版与 Excel/PDF 导出区域
             st.write("---")
             st.write("### 🖨️ A4 标准核销单预览")
             st.caption("系统已自动按标准 A4 比例为您排版，您可直接点击下方按钮进行归档。")
